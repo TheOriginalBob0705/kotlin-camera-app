@@ -1,46 +1,95 @@
 package com.example.cameraapp
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.graphics.Bitmap
-import androidx.appcompat.app.AppCompatActivity
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.provider.MediaStore
-import android.widget.Button
-import android.widget.ImageView
+import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.example.cameraapp.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var imgPicSave : ImageView
-    lateinit var btnTakePic : Button
-    val REQUEST_IMAGE_CAPTURE = 100
+    private lateinit var binding: ActivityMainBinding
+    private var imageCapture : ImageCapture?=null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        imgPicSave = findViewById(R.id.imgPicSave)
-        btnTakePic = findViewById(R.id.btnTakePic)
+        if (allPermissionGranted()) {
+            startCamera()
+        } else {
+            ActivityCompat.requestPermissions(
+                this, Constants.REQUIRED_PERMISSIONS,
+                Constants.REQUEST_CODE_PERMISSIONS
+            )
+        }
+    }
 
-        btnTakePic.setOnClickListener {
-            val picIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    private fun startCamera() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+
+        cameraProviderFuture.addListener({
+            val cameraProvider : ProcessCameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder()
+                .build()
+                .also { mPreview ->
+
+                    mPreview.setSurfaceProvider(
+                        binding.viewFinder.surfaceProvider
+                    )
+            }
+
+            imageCapture = ImageCapture.Builder()
+                .build()
+
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             try {
-                startActivityForResult(picIntent, REQUEST_IMAGE_CAPTURE)
-            } catch (e : ActivityNotFoundException) {
-                Toast.makeText(this, "Error: " + e.localizedMessage, Toast.LENGTH_SHORT).show()
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    this, cameraSelector,
+                    preview, imageCapture
+                )
+
+            } catch (e : Exception) {
+                Log.d(Constants.TAG, "startCamera Fail: ", e)
             }
-        }
+        }, ContextCompat.getMainExecutor(this))
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            val imgBitmap = data?.extras?.get("data") as Bitmap
-            imgPicSave.setImageBitmap(imgBitmap)
-        } else {
-            super.onActivityResult(requestCode, resultCode, data)
-        }
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+       if (requestCode == Constants.REQUEST_CODE_PERMISSIONS) {
+           if (allPermissionGranted()) {
+               startCamera()
+           } else {
+               Toast.makeText(this,
+                   "Permissions not granted by user",
+                   Toast.LENGTH_SHORT).show()
+
+               finish()
+           }
+       }
     }
+
+    private fun allPermissionGranted() =
+        Constants.REQUIRED_PERMISSIONS.all {
+            ContextCompat.checkSelfPermission(
+                baseContext, it
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+
+
+
 }
