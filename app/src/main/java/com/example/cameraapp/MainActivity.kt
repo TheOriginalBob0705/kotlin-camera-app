@@ -2,12 +2,11 @@ package com.example.cameraapp
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCase
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Column
@@ -16,9 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -29,7 +26,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlinx.coroutines.launch
 
 @ExperimentalPermissionsApi
 class MainActivity : ComponentActivity() {
@@ -111,10 +107,8 @@ private fun Reason(
 fun CameraPreview(
     modifier : Modifier = Modifier,
     camScale : PreviewView.ScaleType = PreviewView.ScaleType.FILL_CENTER,
-    camSelector : CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    useCase : (UseCase) -> Unit = {}
 ) {
-    val corScope = rememberCoroutineScope()
-    val lifecycleOwner = LocalLifecycleOwner.current
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -126,24 +120,12 @@ fun CameraPreview(
                 )
             }
 
-            val previewUseCase = Preview.Builder()
+            useCase(Preview.Builder()
                 .build()
                 .also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
-
-            corScope.launch {
-                val cameraProvider = context.getCameraProvider()
-                try {
-                    cameraProvider.unbindAll()
-
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner, camSelector, previewUseCase
-                    )
-                } catch (ex : Exception) {
-                    Log.e("fun: CameraPreview", "Couldn't bind use case", ex)
-                }
-            }
+            )
             previewView
         }
     )
