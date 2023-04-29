@@ -2,20 +2,21 @@ package com.example.cameraapp
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -131,6 +132,35 @@ fun CameraPreview(
     )
 }
 
+@Composable
+fun CameraCapture(
+    modifier : Modifier = Modifier,
+    camSelector : CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+) {
+    Box(modifier = modifier) {
+        val context = LocalContext.current
+        val lifecycleOwner = LocalLifecycleOwner.current
+        var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
+        CameraPreview(
+            modifier = Modifier.fillMaxSize(),
+            useCase = {
+                previewUseCase = it
+            }
+        )
+        LaunchedEffect(previewUseCase) {
+            val cameraProvider = context.getCameraProvider()
+            try {
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner, camSelector, previewUseCase
+                )
+            } catch (ex: Exception) {
+                Log.e("fun: CameraCapture", "Could not bind use case", ex)
+            }
+        }
+    }
+}
+
 suspend fun Context.getCameraProvider() : ProcessCameraProvider = suspendCoroutine { continuationProvider ->
     ProcessCameraProvider.getInstance(this).also { future ->
         future.addListener({
@@ -141,3 +171,5 @@ suspend fun Context.getCameraProvider() : ProcessCameraProvider = suspendCorouti
 
 val Context.executor : Executor
     get() = ContextCompat.getMainExecutor(this)
+
+
