@@ -1,6 +1,9 @@
 package com.example.cameraapp
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -16,9 +19,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import org.apache.http.client.methods.HttpGet
 import java.io.File
+import org.apache.http.client.utils.URIBuilder
+import org.apache.http.impl.client.HttpClients
 
+@ExperimentalCoroutinesApi
 @ExperimentalPermissionsApi
 @Composable
 fun CameraCapture(
@@ -34,9 +42,16 @@ fun CameraCapture(
             Column(modifier) {
                 Text("Permissions denied")
                 Spacer(modifier = Modifier.height(10.dp))
-                Button(onClick = { /* TODO */
-                }) {
-
+                Button(
+                    onClick = {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                        )
+                    }
+                ) {
+                    Text("Open settings")
                 }
             }
         }
@@ -86,5 +101,5 @@ fun CameraCapture(
             }
         }
     }
-
 }
+
