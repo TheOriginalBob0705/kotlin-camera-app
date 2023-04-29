@@ -1,6 +1,8 @@
 package com.example.cameraapp
 
+import android.Manifest
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -10,6 +12,7 @@ import androidx.camera.core.*
 import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -20,6 +23,9 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import com.example.cameraapp.ui.theme.CameraAppTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionRequired
@@ -33,6 +39,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
+@ExperimentalCoilApi
 @ExperimentalPermissionsApi
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState : Bundle?) {
@@ -47,29 +54,42 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@ExperimentalCoilApi
 @ExperimentalPermissionsApi
 @Composable
 fun CameraPreviewContent(modifier : Modifier = Modifier) {
-    Permission(
-        permission = android.Manifest.permission.CAMERA,
-        reason = "This app requires permission to use the camera",
-        permissionDeniedOutput = {
-            Column(modifier) {
-                Text("Permission denied")
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(onClick = { /* TODO make a button to take you to settings and set the permission */ }) {
+    val emptyImageUri = Uri.parse("file://dev/null")
+    var imageUri by remember { mutableStateOf(emptyImageUri) }
+    if (imageUri != emptyImageUri) {
+        Box(modifier = modifier) {
+            Image(
+                modifier = Modifier.fillMaxSize(),
+                painter = rememberImagePainter(imageUri),
+                contentDescription = "Captured image"
+            )
+            Button(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                onClick = {
+                    imageUri = emptyImageUri
                 }
+            ) {
+                Text("Go back")
             }
         }
-    ) {
-        CameraCapture(modifier)
+    } else {
+        CameraCapture(
+            modifier = modifier,
+            imgFile = { file ->
+                imageUri = file.toUri()
+            }
+        )
     }
 }
 
 @ExperimentalPermissionsApi
 @Composable
 fun Permission(
-    permission : String = android.Manifest.permission.CAMERA,
+    permission : String = Manifest.permission.CAMERA,
     reason : String = "Camera permissions are needed for the app to work",
     permissionDeniedOutput : @Composable () -> Unit = {},
     output : @Composable () -> Unit = {}
@@ -109,6 +129,7 @@ private fun Reason(
     )
 }
 
+@ExperimentalPermissionsApi
 @Composable
 fun CameraCapture(
     modifier : Modifier = Modifier,
@@ -116,50 +137,66 @@ fun CameraCapture(
     imgFile : (File) -> Unit = {}
 ) {
     val context = LocalContext.current
-    Box(modifier = modifier) {
-        val lifecycleOwner = LocalLifecycleOwner.current
-        val corScope = rememberCoroutineScope()
-        var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
-        val imageCaptureUseCase by remember {
-            mutableStateOf(
-                ImageCapture.Builder()
-                    .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .build()
-            )
-        }
-        Box {
-            CameraPreview(
-                modifier = Modifier.fillMaxSize(),
-                useCase = { previewUseCase = it }
-            )
-            Button(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(20.dp)
-                    .align(Alignment.BottomCenter),
-                onClick = {
-                    corScope.launch {
-                        imageCaptureUseCase.takePicture(context.executor).let {
-                            imgFile(it)
-                        }
-                    }
+    Permission(
+        permission = Manifest.permission.CAMERA,
+        reason = "Camera permissions are needed for the app to work",
+        permissionDeniedOutput = {
+            Column(modifier) {
+                Text("Permissions denied")
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(onClick = { /* TODO */
+                }) {
+
                 }
-            ) {
-                Text("Snap picture")
             }
         }
-        LaunchedEffect(previewUseCase) {
-            val cameraProvider = context.getCameraProvider()
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner, camSelector, previewUseCase, imageCaptureUseCase
+    ) {
+        Box(modifier = modifier) {
+            val lifecycleOwner = LocalLifecycleOwner.current
+            val corScope = rememberCoroutineScope()
+            var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
+            val imageCaptureUseCase by remember {
+                mutableStateOf(
+                    ImageCapture.Builder()
+                        .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
+                        .build()
                 )
-            } catch (ex: Exception) {
-                Log.e("fun: CameraCapture", "Could not bind use cases", ex)
+            }
+            Box {
+                CameraPreview(
+                    modifier = Modifier.fillMaxSize(),
+                    useCase = { previewUseCase = it }
+                )
+                Button(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .padding(20.dp)
+                        .align(Alignment.BottomCenter),
+                    onClick = {
+                        corScope.launch {
+                            imageCaptureUseCase.takePicture(context.executor).let {
+                                imgFile(it)
+                            }
+                        }
+                    }
+                ) {
+                    Text("Snap picture")
+                }
+            }
+            LaunchedEffect(previewUseCase) {
+                val cameraProvider = context.getCameraProvider()
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner, camSelector, previewUseCase, imageCaptureUseCase
+                    )
+                } catch (ex: Exception) {
+                    Log.e("fun: CameraCapture", "Could not bind use cases", ex)
+                }
             }
         }
     }
+
 }
 
 @Composable
