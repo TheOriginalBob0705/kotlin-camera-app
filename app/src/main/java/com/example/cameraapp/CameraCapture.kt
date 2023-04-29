@@ -21,10 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import org.apache.http.client.methods.HttpGet
 import java.io.File
-import org.apache.http.client.utils.URIBuilder
-import org.apache.http.impl.client.HttpClients
 
 @ExperimentalCoroutinesApi
 @ExperimentalPermissionsApi
@@ -81,6 +78,7 @@ fun CameraCapture(
                         corScope.launch {
                             imageCaptureUseCase.takePicture(context.executor).let {
                                 imgFile(it)
+                                /* TODO: Upload image to server */
                             }
                         }
                     }
@@ -102,4 +100,3 @@ fun CameraCapture(
         }
     }
 }
-
