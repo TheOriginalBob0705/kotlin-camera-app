@@ -28,7 +28,7 @@ val Context.executor : Executor
 suspend fun ImageCapture.takePicture(executor : Executor) : File {
     val photoFile = withContext(Dispatchers.IO) {
         kotlin.runCatching {
-            File.createTempFile("image", "jpg")
+            File.createTempFile("image", ".jpg")
         }.getOrElse { ex ->
             Log.e("fun: ImageCapture.takePicture", "Failed to create temp file", ex)
             File("/dev/null")

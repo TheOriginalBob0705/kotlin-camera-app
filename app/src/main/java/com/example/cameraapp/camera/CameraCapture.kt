@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import com.example.cameraapp.network.ImageUploadViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -39,6 +40,8 @@ fun CameraCapture(
     imgFile : (File) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val imageUploadViewModel = ImageUploadViewModel()
+
     Permission(
         permission = Manifest.permission.CAMERA,
         reason = "Camera permissions are needed for the app to work",
@@ -87,7 +90,7 @@ fun CameraCapture(
                                 imgFile(it)
                                 val bitmap = BitmapFactory.decodeFile(it.absolutePath)
                                 saveImageToCameraRoll(bitmap, context)
-                                /* TODO: Upload image to server */
+                                imageUploadViewModel.uploadImage(it)
                             }
                         }
                     }
@@ -124,12 +127,10 @@ private fun saveImageToCameraRoll(bitmap: Bitmap, context: Context) {
 
     val rotatedBitmap = bitmap.rotate(90f)
 
-    // Save the rotated bitmap to file
     rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream)
     outStream.flush()
     outStream.close()
 
-    // Tell the media scanner about the new file so that it is immediately available to the user.
     val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
     mediaScanIntent.data = Uri.fromFile(file)
     context.sendBroadcast(mediaScanIntent)
