@@ -1,7 +1,7 @@
 package com.example.cameraapp.login.database
 
-import android.content.Context
-import androidx.room.*
+import androidx.room.Database
+import androidx.room.RoomDatabase
 
 @Database(entities = [User::class], version = 1, exportSchema = false)
 abstract class LoginDatabase : RoomDatabase() {
@@ -10,14 +10,5 @@ abstract class LoginDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var Instance : LoginDatabase? = null
-
-        fun getDatabase(context : Context) : LoginDatabase {
-            return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, LoginDatabase::class.java, "login_db")
-                    .fallbackToDestructiveMigration()
-                    .build()
-                    .also { Instance = it }
-            }
-        }
     }
 }

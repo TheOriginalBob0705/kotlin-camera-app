@@ -1,4 +1,4 @@
-package com.example.cameraapp.login.component
+package com.example.cameraapp.login.components
 
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton

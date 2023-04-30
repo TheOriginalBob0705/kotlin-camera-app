@@ -1,15 +1,19 @@
 package com.example.cameraapp.login.database
 
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class UsersRepository(private val userDao : UserDao) {
-    fun getUser(user: User): Flow<User> = userDao.getUser(user.username, user.password)
+    suspend fun getUserByUsername(username : String) : User {
+        return withContext(Dispatchers.IO) {
+            val user = userDao.getUserByUsername(username)
+            user
+        }
+    }
 
-    suspend fun registerUser(user: User): Flow<Int> = userDao.registerUser(user.username, user.password)
-
-    suspend fun updatePassword(
-        username: String,
-        oldPassword: String,
-        newPassword: String
-    ): Flow<Int> = userDao.updatePassword(username, oldPassword, newPassword)
+    suspend fun registerUser(user : User) {
+        withContext(Dispatchers.IO) {
+            userDao.registerUser(user)
+        }
+    }
 }

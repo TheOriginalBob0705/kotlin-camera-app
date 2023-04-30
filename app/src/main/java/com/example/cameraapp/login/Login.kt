@@ -1,4 +1,4 @@
-package com.example.cameraapp
+package com.example.cameraapp.login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,11 +7,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -23,10 +22,18 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.cameraapp.Routes
+import com.example.cameraapp.login.models.LoginResult
+import com.example.cameraapp.login.models.LoginViewModel
 import com.example.cameraapp.ui.theme.Purple700
 
 @Composable
-fun LoginPage(navController : NavHostController) {
+fun LoginPage(navController : NavHostController, viewModel: LoginViewModel) {
+
+    val usernameState = remember { mutableStateOf(TextFieldValue()) }
+    val passwordState = remember { mutableStateOf(TextFieldValue()) }
+    val loginResultState by viewModel.loginResult.collectAsState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         ClickableText(
             text = AnnotatedString("Sign up"),
@@ -48,31 +55,28 @@ fun LoginPage(navController : NavHostController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val username = remember { mutableStateOf(TextFieldValue()) }
-        val password = remember { mutableStateOf(TextFieldValue()) }
-
         Text(text = "Camera App", style = TextStyle(fontSize = 40.sp, fontFamily = FontFamily.Default))
 
         Spacer(modifier = Modifier.height(20.dp))
         TextField(
             label = { Text(text = "Username") },
-            value = username.value,
-            onValueChange = { username.value = it }
+            value = usernameState.value,
+            onValueChange = { usernameState.value = it }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
         TextField(
             label = { Text(text = "Password") },
-            value = password.value,
+            value = passwordState.value,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            onValueChange = { password.value = it }
+            onValueChange = { passwordState.value = it }
         )
 
         Spacer(modifier = Modifier.height(20.dp))
         Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
             Button(
-                onClick = { navController.navigate(Routes.CameraPreview.route) },
+                onClick = { viewModel.login(usernameState.value.text, passwordState.value.text) },
                 shape = RoundedCornerShape(50.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -83,17 +87,19 @@ fun LoginPage(navController : NavHostController) {
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-        ClickableText(
-            text = AnnotatedString("Forgot password?"),
-            onClick = { validateLogin() },
-            style = TextStyle(
-                fontSize = 14.sp,
-                fontFamily = FontFamily.Default
-            )
-        )
+
+        if (loginResultState != null) {
+            when (loginResultState) {
+                is LoginResult.Success -> {
+                    navController.navigate(Routes.CameraPreview.route)
+                }
+                is LoginResult.Error -> {
+                    Text(text = (loginResultState as LoginResult.Error).message, color = Color.Red)
+                }
+                else -> {
+                    // Do nothing
+                }
+            }
+        }
     }
-}
-
-fun validateLogin() {
-
 }
