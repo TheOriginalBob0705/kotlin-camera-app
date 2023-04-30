@@ -1,4 +1,4 @@
-package com.example.cameraapp
+package com.example.cameraapp.camera
 
 import android.content.Context
 import android.util.Log

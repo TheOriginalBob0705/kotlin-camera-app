@@ -1,4 +1,4 @@
-package com.example.cameraapp
+package com.example.cameraapp.camera
 
 import android.view.ViewGroup
 import androidx.camera.core.Preview
@@ -18,6 +18,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
+import com.example.cameraapp.EMPTY_IMG_URI
+import com.example.cameraapp.gallery.Gallery
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 

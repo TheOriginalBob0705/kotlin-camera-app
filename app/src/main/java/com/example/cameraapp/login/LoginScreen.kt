@@ -5,7 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import coil.annotation.ExperimentalCoilApi
-import com.example.cameraapp.MainCameraPreview
+import com.example.cameraapp.camera.MainCameraPreview
 import com.example.cameraapp.Routes
 import com.example.cameraapp.login.database.UsersRepository
 import com.example.cameraapp.login.models.LoginViewModel

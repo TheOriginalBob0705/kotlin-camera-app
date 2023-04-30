@@ -1,4 +1,4 @@
-package com.example.cameraapp
+package com.example.cameraapp.camera
 
 import android.Manifest
 import androidx.compose.material.AlertDialog
