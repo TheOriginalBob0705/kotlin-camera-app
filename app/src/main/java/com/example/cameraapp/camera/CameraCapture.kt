@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.compose.foundation.layout.*
@@ -60,7 +61,7 @@ fun CameraCapture(
             val imageCaptureUseCase by remember {
                 mutableStateOf(
                     ImageCapture.Builder()
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                        .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
                         .build()
                 )
             }
@@ -69,9 +70,9 @@ fun CameraCapture(
                     modifier = Modifier.fillMaxSize(),
                     useCase = { previewUseCase = it }
                 )
-                Button(
+                CameraButton(
                     modifier = Modifier
-                        .wrapContentSize()
+                        .size(100.dp)
                         .padding(20.dp)
                         .align(Alignment.BottomCenter),
                     onClick = {
@@ -82,9 +83,7 @@ fun CameraCapture(
                             }
                         }
                     }
-                ) {
-                    Text("Snap picture")
-                }
+                )
             }
             LaunchedEffect(previewUseCase) {
                 val cameraProvider = context.getCameraProvider()
