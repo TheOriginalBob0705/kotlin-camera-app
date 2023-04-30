@@ -15,12 +15,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.annotation.ExperimentalCoilApi
 import com.example.cameraapp.EMPTY_IMG_URI
 import com.example.cameraapp.camera.Permission
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
-@ExperimentalCoilApi
 @ExperimentalPermissionsApi
 @Composable
 fun Gallery(

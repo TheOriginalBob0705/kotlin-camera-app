@@ -1,8 +1,13 @@
 package com.example.cameraapp.camera
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
+import android.os.Environment
 import android.provider.Settings
 import android.util.Log
 import androidx.camera.core.CameraSelector
@@ -23,6 +28,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
 
 @ExperimentalCoroutinesApi
 @ExperimentalPermissionsApi
@@ -79,6 +85,8 @@ fun CameraCapture(
                         corScope.launch {
                             imageCaptureUseCase.takePicture(context.executor).let {
                                 imgFile(it)
+                                val bitmap = BitmapFactory.decodeFile(it.absolutePath)
+                                saveImageToCameraRoll(bitmap, context)
                                 /* TODO: Upload image to server */
                             }
                         }
@@ -98,4 +106,36 @@ fun CameraCapture(
             }
         }
     }
+}
+
+private fun saveImageToCameraRoll(bitmap: Bitmap, context: Context) {
+    val filename = "${System.currentTimeMillis()}.jpg"
+    val mediaStorageDir = File(
+        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+        "Camera"
+    )
+
+    if (!mediaStorageDir.exists()) {
+        mediaStorageDir.mkdirs()
+    }
+
+    val file = File(mediaStorageDir, filename)
+    val outStream = FileOutputStream(file)
+
+    val rotatedBitmap = bitmap.rotate(90f)
+
+    // Save the rotated bitmap to file
+    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream)
+    outStream.flush()
+    outStream.close()
+
+    // Tell the media scanner about the new file so that it is immediately available to the user.
+    val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
+    mediaScanIntent.data = Uri.fromFile(file)
+    context.sendBroadcast(mediaScanIntent)
+}
+
+fun Bitmap.rotate(degrees: Float): Bitmap {
+    val matrix = Matrix().apply { postRotate(degrees) }
+    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }
