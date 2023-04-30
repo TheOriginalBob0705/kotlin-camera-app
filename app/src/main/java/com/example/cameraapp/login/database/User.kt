@@ -1,5 +1,6 @@
 package com.example.cameraapp.login.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -7,6 +8,8 @@ import androidx.room.PrimaryKey
 data class User(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    @ColumnInfo(name = "username")
     val username : String,
+    @ColumnInfo(name = "password")
     val password : String,
 )
