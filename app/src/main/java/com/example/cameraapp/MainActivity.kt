@@ -21,13 +21,17 @@ val EMPTY_IMG_URI : Uri = Uri.parse("file://dev/null")
 @ExperimentalCoroutinesApi
 @ExperimentalPermissionsApi
 class MainActivity : ComponentActivity() {
-    lateinit var usersRep : UsersRepository
+    private val usersRep by lazy {
+        UsersRepository(
+            Room.databaseBuilder(
+                applicationContext,
+                LoginDatabase::class.java,
+                "login_db"
+            ).build().userDao()
+        )
+    }
 
     override fun onCreate(savedInstanceState : Bundle?) {
-        val db = Room.databaseBuilder(applicationContext, LoginDatabase::class.java, "login_db")
-            .build()
-        usersRep = UsersRepository(db.userDao())
-
         super.onCreate(savedInstanceState)
         setContent {
             CameraAppTheme {
@@ -38,6 +42,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-

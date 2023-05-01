@@ -17,21 +17,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @ExperimentalCoilApi
 @ExperimentalCoroutinesApi
 @Composable
-fun LoginScreenMain(usersRep : UsersRepository) {
+fun LoginScreenMain(usersRep: UsersRepository) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.Login.route) {
-
-        composable(Routes.Login.route) {
-            LoginPage(navController = navController, viewModel = LoginViewModel(usersRep))
-        }
-
-        composable(Routes.SignUp.route) {
-            SignUp(navController = navController, viewModel = SignUpViewModel(usersRep))
-        }
-
-        composable(Routes.CameraPreview.route) {
-            MainCameraPreview()
-        }
+        composable(Routes.Login.route) { LoginPage(navController, LoginViewModel(usersRep)) }
+        composable(Routes.SignUp.route) { SignUp(navController, SignUpViewModel(usersRep)) }
+        composable(Routes.CameraPreview.route) { MainCameraPreview() }
     }
 }
