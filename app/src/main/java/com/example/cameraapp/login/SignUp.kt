@@ -1,5 +1,6 @@
 package com.example.cameraapp.login
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,98 +19,90 @@ import com.example.cameraapp.login.components.CustomTopAppBar
 import com.example.cameraapp.login.models.SignUpResult
 import com.example.cameraapp.login.models.SignUpViewModel
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun SignUp(navController : NavHostController, viewModel : SignUpViewModel) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        ScaffoldWithTopBar(navController, viewModel)
+fun SignUp(navController: NavHostController, viewModel: SignUpViewModel) {
+    Scaffold(
+        topBar = { CustomTopAppBar(navController, "Sign up", true) }
+    ) {
+        SignUpContent(navController, viewModel)
     }
 }
 
 @Composable
-fun ScaffoldWithTopBar(navController : NavHostController, viewModel: SignUpViewModel) {
-
+fun SignUpContent(navController : NavHostController, viewModel: SignUpViewModel) {
     val usernameState = remember { mutableStateOf(TextFieldValue()) }
     val passwordState = remember { mutableStateOf(TextFieldValue()) }
     val confirmPasswordState = remember { mutableStateOf(TextFieldValue()) }
     val signUpResultState by viewModel.signUpResult.collectAsState()
 
-    Scaffold(
-        topBar = {
-            CustomTopAppBar(navController, "Sign up", true)
-        },
-        content = { padding ->
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-
-
-                Spacer(modifier = Modifier.height(20.dp))
-                TextField(
-                    label = { Text(text = "Username") },
-                    value = usernameState.value,
-                    onValueChange = { usernameState.value = it }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-                TextField(
-                    label = { Text(text = "Password") },
-                    value = passwordState.value,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    onValueChange = { passwordState.value = it }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-                TextField(
-                    label = { Text(text = "Confirm Password") },
-                    value = confirmPasswordState.value,
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    onValueChange = { confirmPasswordState.value = it }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-                Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
-                    Button(
-                        onClick = {
-                            viewModel.signUp(
-                                usernameState.value.text,
-                                passwordState.value.text,
-                                confirmPasswordState.value.text
-                            )
-                        },
-                        shape = RoundedCornerShape(50.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                    ) {
-                        Text(text = "Sign Up")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                if (signUpResultState != null) {
-                    when (signUpResultState) {
-                        is SignUpResult.Success -> {
-                            SignUpDialog(onDismiss = { navController.navigate(Routes.Login.route) })
-                        }
-                        is SignUpResult.Error -> {
-                            Text(
-                                text = (signUpResultState as SignUpResult.Error).message,
-                                color = Color.Red
-                            )
-                        }
-                        else -> {
-                            // Do nothing
-                        }
-                    }
+    Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(20.dp))
+        TextField(
+            label = { Text("Username") },
+            value = usernameState.value,
+            onValueChange = { usernameState.value = it }
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        PasswordTextField(
+            label = "Password",
+            passwordState = passwordState
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        PasswordTextField(
+            label = "Confirm Password",
+            passwordState = confirmPasswordState
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        SignUpButton(
+            username = usernameState.value.text,
+            password = passwordState.value.text,
+            confirmPassword = confirmPasswordState.value.text,
+            viewModel = viewModel
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        signUpResultState?.let { result ->
+            when (result) {
+                is SignUpResult.Success -> SignUpDialog(onDismiss = { navController.navigate(Routes.Login.route) })
+                is SignUpResult.Error -> {
+                    Text(text = result.message, color = Color.Red)
                 }
             }
         }
+    }
+}
+
+@Composable
+fun PasswordTextField(label: String, passwordState: MutableState<TextFieldValue>) {
+    TextField(
+        label = { Text(label) },
+        value = passwordState.value,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        onValueChange = { passwordState.value = it }
     )
+}
+
+@Composable
+fun SignUpButton(
+    username: String,
+    password: String,
+    confirmPassword: String,
+    viewModel: SignUpViewModel
+) {
+    Box(modifier = Modifier.padding(40.dp, 0.dp, 40.dp, 0.dp)) {
+        Button(
+            onClick = { viewModel.signUp(username, password, confirmPassword) },
+            shape = RoundedCornerShape(50.dp),
+            modifier = Modifier.fillMaxWidth().height(50.dp)
+        ) {
+            Text(text = "Sign Up")
+        }
+    }
 }
 
 @Composable
@@ -119,9 +112,7 @@ fun SignUpDialog(onDismiss: () -> Unit) {
         title = { Text("Success!") },
         text = { Text("You have successfully signed up!") },
         confirmButton = {
-            Button(
-                onClick = onDismiss
-            ) {
+            Button(onClick = onDismiss) {
                 Text("OK")
             }
         }
