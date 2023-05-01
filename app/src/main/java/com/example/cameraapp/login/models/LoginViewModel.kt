@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cameraapp.login.database.UsersRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
@@ -16,7 +15,7 @@ sealed class LoginResult {
 class LoginViewModel(private val userRepository: UsersRepository) : ViewModel() {
 
     private val _loginResult = MutableStateFlow<LoginResult?>(null)
-    val loginResult: StateFlow<LoginResult?> = _loginResult.asStateFlow()
+    val loginResult = _loginResult.asStateFlow()
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
