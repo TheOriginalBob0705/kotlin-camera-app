@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Environment
 import android.provider.Settings
@@ -35,9 +36,9 @@ import java.io.FileOutputStream
 @ExperimentalPermissionsApi
 @Composable
 fun CameraCapture(
-    modifier : Modifier = Modifier,
-    camSelector : CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
-    imgFile : (File) -> Unit = {}
+    modifier: Modifier = Modifier,
+    camSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+    imgFile: (File) -> Unit = {}
 ) {
     val context = LocalContext.current
     val imageUploadViewModel = ImageUploadViewModel()
@@ -51,11 +52,9 @@ fun CameraCapture(
                 Spacer(modifier = Modifier.height(10.dp))
                 Button(
                     onClick = {
-                        context.startActivity(
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        )
+                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        })
                     }
                 ) {
                     Text("Open settings")
@@ -63,39 +62,32 @@ fun CameraCapture(
             }
         }
     ) {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val corScope = rememberCoroutineScope()
+        var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
+        val imageCaptureUseCase by remember {
+            mutableStateOf(ImageCapture.Builder().setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY).build())
+        }
         Box(modifier = modifier) {
-            val lifecycleOwner = LocalLifecycleOwner.current
-            val corScope = rememberCoroutineScope()
-            var previewUseCase by remember { mutableStateOf<UseCase>(Preview.Builder().build()) }
-            val imageCaptureUseCase by remember {
-                mutableStateOf(
-                    ImageCapture.Builder()
-                        .setCaptureMode(CAPTURE_MODE_MAXIMIZE_QUALITY)
-                        .build()
-                )
-            }
-            Box {
-                CameraPreview(
-                    modifier = Modifier.fillMaxSize(),
-                    useCase = { previewUseCase = it }
-                )
-                CameraButton(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .padding(20.dp)
-                        .align(Alignment.BottomCenter),
-                    onClick = {
-                        corScope.launch {
-                            imageCaptureUseCase.takePicture(context.executor).let {
-                                imgFile(it)
-                                val bitmap = BitmapFactory.decodeFile(it.absolutePath)
-                                saveImageToCameraRoll(bitmap, context)
-                                imageUploadViewModel.uploadImage(it)
-                            }
+            CameraPreview(
+                modifier = Modifier.fillMaxSize(),
+                useCase = { previewUseCase = it }
+            )
+            CameraButton(
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(20.dp)
+                    .align(Alignment.BottomCenter),
+                onClick = {
+                    corScope.launch {
+                        imageCaptureUseCase.takePicture(context.executor).let { file ->
+                            imgFile(file)
+                            saveImageToCameraRoll(BitmapFactory.decodeFile(file.absolutePath), context)
+                            imageUploadViewModel.uploadImage(file)
                         }
                     }
-                )
-            }
+                }
+            )
             LaunchedEffect(previewUseCase) {
                 val cameraProvider = context.getCameraProvider()
                 try {
@@ -113,27 +105,13 @@ fun CameraCapture(
 
 private fun saveImageToCameraRoll(bitmap: Bitmap, context: Context) {
     val filename = "${System.currentTimeMillis()}.jpg"
-    val mediaStorageDir = File(
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-        "Camera"
-    )
-
-    if (!mediaStorageDir.exists()) {
-        mediaStorageDir.mkdirs()
-    }
-
+    val mediaStorageDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera")
+    mediaStorageDir.mkdirs()
     val file = File(mediaStorageDir, filename)
-    val outStream = FileOutputStream(file)
-
-    val rotatedBitmap = bitmap.rotate(90f)
-
-    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outStream)
-    outStream.flush()
-    outStream.close()
-
-    val mediaScanIntent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-    mediaScanIntent.data = Uri.fromFile(file)
-    context.sendBroadcast(mediaScanIntent)
+    FileOutputStream(file).use { outStream ->
+        bitmap.rotate(90f).compress(Bitmap.CompressFormat.JPEG, 100, outStream)
+    }
+    MediaScannerConnection.scanFile(context, arrayOf(file.path), null, null)
 }
 
 fun Bitmap.rotate(degrees: Float): Bitmap {
