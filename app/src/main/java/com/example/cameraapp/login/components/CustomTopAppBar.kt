@@ -10,22 +10,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 
 @Composable
-fun CustomTopAppBar(navController : NavHostController, title : String, showBackIcon : Boolean) {
+fun CustomTopAppBar(navController: NavHostController, title: String, showBackIcon: Boolean) {
     TopAppBar(
-        title = {
-            Text(text = title)
-        },
-        navigationIcon = if (showBackIcon && navController.previousBackStackEntry != null) {
-            {
+        title = { Text(text = title) },
+        navigationIcon = {
+            if (showBackIcon && navController.previousBackStackEntry != null) {
                 IconButton(onClick = { navController.navigateUp() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = "Back"
-                    )
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                 }
             }
-        } else {
-            null
         }
     )
 }
