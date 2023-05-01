@@ -1,5 +1,6 @@
 package com.example.cameraapp.camera
 
+import android.content.Context
 import android.view.ViewGroup
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
@@ -13,6 +14,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
@@ -27,8 +29,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @ExperimentalCoroutinesApi
 @ExperimentalPermissionsApi
 @Composable
-fun MainCameraPreview(modifier : Modifier = Modifier) {
+fun MainCameraPreview(modifier: Modifier = Modifier) {
     var imageUri by remember { mutableStateOf(EMPTY_IMG_URI) }
+
     if (imageUri != EMPTY_IMG_URI) {
         Box(modifier = modifier) {
             Image(
@@ -38,38 +41,31 @@ fun MainCameraPreview(modifier : Modifier = Modifier) {
             )
             Button(
                 modifier = Modifier.align(Alignment.BottomCenter),
-                onClick = {
-                    imageUri = EMPTY_IMG_URI
-                }
+                onClick = { imageUri = EMPTY_IMG_URI }
             ) {
                 Text("Go back")
             }
         }
     } else {
         var isGallerySelected by remember { mutableStateOf(false) }
+
         if (isGallerySelected) {
-            Gallery(
-                modifier = modifier,
-                imgUri = { uri ->
-                    isGallerySelected = false
-                    imageUri = uri
-                }
-            )
+            Gallery(modifier = modifier, imgUri = { uri ->
+                isGallerySelected = false
+                imageUri = uri
+            })
         } else {
             Box(modifier = modifier) {
                 CameraCapture(
                     modifier = modifier,
-                    imgFile = { file ->
-                        imageUri = file.toUri()
-                    }
+                    imgFile = { file -> imageUri = file.toUri() }
                 )
+
                 Button(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(8.dp),
-                    onClick = {
-                        isGallerySelected = true
-                    }
+                    onClick = { isGallerySelected = true }
                 ) {
                     Text("Select from Gallery")
                 }
@@ -80,28 +76,24 @@ fun MainCameraPreview(modifier : Modifier = Modifier) {
 
 @Composable
 fun CameraPreview(
-    modifier : Modifier = Modifier,
-    camScale : PreviewView.ScaleType = PreviewView.ScaleType.FILL_CENTER,
-    useCase : (UseCase) -> Unit = {}
+    modifier: Modifier = Modifier,
+    camScale: PreviewView.ScaleType = PreviewView.ScaleType.FILL_CENTER,
+    useCase: (UseCase) -> Unit = {},
+    context : Context = LocalContext.current
 ) {
+    val previewView = remember { PreviewView(context) }.apply {
+        this.scaleType = camScale
+        layoutParams = ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+    }
+
+    val preview = remember { Preview.Builder().build() }
+    useCase(preview.also { it.setSurfaceProvider(previewView.surfaceProvider) })
+
     AndroidView(
         modifier = modifier,
-        factory = { context ->
-            val previewView = PreviewView(context).apply {
-                this.scaleType = camScale
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            }
-            useCase(
-                Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-            )
-            previewView
-        }
+        factory = { previewView }
     )
 }
