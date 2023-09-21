@@ -41,7 +41,7 @@ fun CameraCapture(
     imgFile: (File) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val imageUploadViewModel = ImageUploadViewModel()
+    // val imageUploadViewModel = ImageUploadViewModel()
 
     Permission(
         permission = Manifest.permission.CAMERA,
@@ -83,7 +83,7 @@ fun CameraCapture(
                         imageCaptureUseCase.takePicture(context.executor).let { file ->
                             imgFile(file)
                             saveImageToCameraRoll(BitmapFactory.decodeFile(file.absolutePath), context)
-                            imageUploadViewModel.uploadImage(file)
+                            // imageUploadViewModel.uploadImage(file)
                         }
                     }
                 }

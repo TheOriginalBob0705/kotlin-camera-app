@@ -21,7 +21,7 @@ interface ImageUploadApi {
 }
 
 class ImageUploadViewModel : ViewModel() {
-    private val baseURL = "https://eoqz3adoe97a0e9.m.pipedream.net"
+    private val baseURL = "https://example.com/"
 
     private val retrofit : Retrofit = Retrofit.Builder()
         .baseUrl(baseURL)
